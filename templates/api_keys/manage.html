@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des clés API - MiiCoin Trading Bot{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">Mes clés API</h4>
+                    <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#addApiKeyModal">
+                        <i class="fas fa-plus"></i> Ajouter une clé
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="apiKeysTable">
+                            <thead>
+                                <tr>
+                                    <th>Exchange</th>
+                                    <th>Statut</th>
+                                    <th>Dernière utilisation</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rempli dynamiquement par JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'ajout de clé API -->
+<div class="modal fade" id="addApiKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Ajouter une clé API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addApiKeyForm">
+                    <div class="mb-3">
+                        <label for="exchange" class="form-label">Exchange</label>
+                        <select class="form-select" id="exchange" required>
+                            <option value="binance">Binance</option>
+                            <option value="ftx">FTX</option>
+                            <option value="kucoin">KuCoin</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="apiKey" class="form-label">Clé API</label>
+                        <input type="text" class="form-control" id="apiKey" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="apiSecret" class="form-label">Secret API</label>
+                        <input type="password" class="form-control" id="apiSecret" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="submitApiKey()">Ajouter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+// Charger les clés API
+async function loadApiKeys() {
+    try {
+        const response = await fetch('/api-keys', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            const keys = await response.json();
+            const tbody = document.querySelector('#apiKeysTable tbody');
+            tbody.innerHTML = '';
+            
+            keys.forEach(key => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${key.exchange}</td>
+                    <td>
+                        <span class="badge ${key.is_active ? 'bg-success' : 'bg-danger'}">
+                            ${key.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                    </td>
+                    <td>${key.last_used || 'Jamais'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-${key.is_active ? 'warning' : 'success'}"
+                                onclick="toggleApiKey(${key.id})">
+                            ${key.is_active ? 'Désactiver' : 'Activer'}
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteApiKey(${key.id})">
+                            Supprimer
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    } catch (error) {
+        alert('Erreur lors du chargement des clés API');
+    }
+}
+
+// Ajouter une nouvelle clé API
+async function submitApiKey() {
+    const data = {
+        exchange: document.getElementById('exchange').value,
+        api_key: document.getElementById('apiKey').value,
+        api_secret: document.getElementById('apiSecret').value
+    };
+    
+    try {
+        const response = await fetch('/api-keys', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('addApiKeyModal')).hide();
+            loadApiKeys();
+        } else {
+            const result = await response.json();
+            alert(result.error);
+        }
+    } catch (error) {
+        alert('Erreur lors de l\'ajout de la clé API');
+    }
+}
+
+// Activer/désactiver une clé API
+async function toggleApiKey(keyId) {
+    try {
+        const response = await fetch(`/api-keys/${keyId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            loadApiKeys();
+        }
+    } catch (error) {
+        alert('Erreur lors de la modification de la clé API');
+    }
+}
+
+// Supprimer une clé API
+async function deleteApiKey(keyId) {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette clé API ?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api-keys/${keyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        
+        if (response.ok) {
+            loadApiKeys();
+        }
+    } catch (error) {
+        alert('Erreur lors de la suppression de la clé API');
+    }
+}
+
+// Charger les clés API au chargement de la page
+document.addEventListener('DOMContentLoaded', loadApiKeys);
+</script>
+{% endblock %}
+{% endblock %}

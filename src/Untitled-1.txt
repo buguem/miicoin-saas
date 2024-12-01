@@ -1,0 +1,25 @@
+git clone https://github.com/yourusername/miicoin-saas.git
+cd miicoin-saas
+
+
+Installer PostgreSQL si ce n'est pas déjà fait et créer une base de données :
+bash
+CopyInsert in Terminal
+createdb miicoin_db
+Installer Redis si ce n'est pas déjà fait. Sur Windows, vous pouvez l'installer via :
+bash
+CopyInsert in Terminal
+winget install Redis
+Installer les dépendances Python :
+bash
+CopyInsert in Terminal
+pip install -r requirements.txt
+Initialiser la base de données :
+bash
+CopyInsert in Terminal
+python init_db.py
+Lancer l'application :
+bash
+CopyInsert in Terminal
+flask run
+Je vais exécuter ces commandes pour vous :

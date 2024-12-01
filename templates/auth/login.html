@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Connexion - MiiCoin Trading Bot{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">Connexion</h4>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Bouton de connexion Google -->
+                    <div class="text-center mb-4">
+                        <a href="{{ url_for('auth.google_login') }}" class="btn btn-light btn-lg w-100 position-relative">
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" 
+                                 alt="Google Logo" style="height: 24px; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);">
+                            Se connecter avec Google
+                        </a>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <span class="bg-white px-3">ou</span>
+                        <hr class="mt-0">
+                    </div>
+                    
+                    <!-- Formulaire de connexion classique -->
+                    <form method="POST" action="{{ url_for('auth.login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Mot de passe</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Se souvenir de moi</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Se connecter</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center">
+                    <p class="mb-0">
+                        Pas encore de compte ? 
+                        <a href="{{ url_for('auth.register') }}" class="text-primary">S'inscrire</a>
+                    </p>
+                    <p class="mt-2 mb-0">
+                        <a href="{{ url_for('auth.forgot_password') }}" class="text-muted">
+                            Mot de passe oublié ?
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+    };
+    
+    try {
+        const response = await fetch('/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+            // Stocker le token JWT
+            localStorage.setItem('access_token', result.access_token);
+            // Rediriger vers le dashboard
+            window.location.href = '/dashboard';
+        } else {
+            alert(result.error);
+        }
+    } catch (error) {
+        alert('Erreur de connexion');
+    }
+});
+</script>
+{% endblock %}
